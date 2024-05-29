@@ -1,11 +1,11 @@
 @pt_postal_code_HostAddress = http://localhost:5041
 
-GET {{pt_postal_code_HostAddress}}/todos/
+GET {{pt_postal_code_HostAddress}}/district/
 Accept: application/json
 
 ###
 
-GET {{pt_postal_code_HostAddress}}/todos/1
+GET {{pt_postal_code_HostAddress}}/district/01
 Accept: application/json
 
 ###

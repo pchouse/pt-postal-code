@@ -6,9 +6,15 @@ using log4net.Config;
 using Microsoft.AspNetCore.Routing.Constraints;
 using PChouse.PTPostalCode.Models.County;
 using PChouse.PTPostalCode.Models.PostalCode;
+using Microsoft.AspNetCore.Mvc;
+using PChouse.PTPostalCode.Tabulator;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 builder.Host.UseSystemd();
+builder.Services.Configure<JsonOptions>(options =>
+{
+
+});
 
 XmlConfigurator.Configure(new System.IO.FileInfo("log4net.config"));
 
@@ -155,6 +161,21 @@ addressApi.Map("/{type:regex(^(contains|start)$)}/{street}/{pc4:regex(^[0-9]{{2}
 })
 .WithName("Address")
 .WithDescription("Get the address that street strats or contains and optional belongs to poctal code with pc4, can use wildcard '%s'")
+.WithOpenApi();
+
+addressApi.Map("/tabulator/scroll", ([FromBody] TabulatorRequest tabulatorRequest) =>
+{
+    return Task.Run(async () =>
+    {
+        if (tabulatorRequest.Size > API_MAX_ROWS) throw new Exception("The maximum number of rows cannot be greater the 200");
+
+        using var scope = app.Services.CreateScope();
+        if (scope == null) return null;
+        return await scope!.ServiceProvider!.GetService<AddressModel>()!.TabulatorDataScrollAsync(tabulatorRequest);
+    });
+})
+.WithName("Tabulator Address data")
+.WithDescription("Get the address data for tabulator with progressive load type scroll")
 .WithOpenApi();
 
 

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.Testing;
 using PChouse.PTPostalCode.Models.Address;
+using PChouse.PTPostalCode.Tabulator;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -85,6 +86,90 @@ public class AddressTest
         Assert.IsTrue((response?.Count ?? 0) > 0);
 
         response!.ForEach(a => Assert.IsTrue(a.Street.Contains("Marquês") || a.Street.Contains("Marques")));
+    }
+
+    [TestMethod]
+    public async Task TestTablulatorData()
+    {
+        var response = await this._httpClient.PostAsJsonAsync<TabulatorRequest>(
+            "/address/tabulator/scroll", new TabulatorRequest { Page  = 1, Size = 99}
+        );
+
+        Assert.IsTrue(response?.IsSuccessStatusCode);
+
+        var tabulatorResponse = await response!.Content.ReadFromJsonAsync<TabulatorResponse<AddressEntity>>();
+
+        Assert.IsTrue(tabulatorResponse?.Data.Count == 99);
+    }
+
+    [TestMethod]
+    public async Task TestTablulatorFilterEqual()
+    {
+        var response = await this._httpClient.PostAsJsonAsync<TabulatorRequest>(
+            "/address/tabulator/scroll", new TabulatorRequest { 
+                Page = 1, 
+                Size = 99,
+                Filter = { 
+                    new() { Field = "Pc4", Type = "=", Value = "1100"},
+                    new() { Field = "Pc3", Type = "=", Value = "003"}
+                }
+            }
+        );
+
+        Assert.IsTrue(response?.IsSuccessStatusCode);
+
+        var tabulatorResponse = await response!.Content.ReadFromJsonAsync<TabulatorResponse<AddressEntity>>();
+
+        Assert.IsTrue(tabulatorResponse?.Data.Count == 1);
+
+        Assert.IsTrue(tabulatorResponse?.Data[0].Pc4 == "1100");
+        Assert.IsTrue(tabulatorResponse?.Data[0].Pc3 == "003");
+    }
+
+    [TestMethod]
+    public async Task TestTablulatorFilterSortAsc()
+    {
+        var response = await this._httpClient.PostAsJsonAsync<TabulatorRequest>(
+            "/address/tabulator/scroll", new TabulatorRequest
+            {
+                Page = 1,
+                Size = 99,
+                Sort = {
+                    new() { Field = "Pc4", Dir = "asc"}
+                }
+            }
+        );
+
+        Assert.IsTrue(response?.IsSuccessStatusCode);
+
+        var tabulatorResponse = await response!.Content.ReadFromJsonAsync<TabulatorResponse<AddressEntity>>();
+
+        Assert.IsTrue(tabulatorResponse?.Data.Count == 99);
+
+        Assert.IsTrue(tabulatorResponse?.Data[0].Pc4.StartsWith('1'));
+    }
+
+    [TestMethod]
+    public async Task TestTablulatorFilterSortDesc()
+    {
+        var response = await this._httpClient.PostAsJsonAsync<TabulatorRequest>(
+            "/address/tabulator/scroll", new TabulatorRequest
+            {
+                Page = 1,
+                Size = 99,
+                Sort = {
+                    new() { Field = "Pc4", Dir = "desc"}
+                }
+            }
+        );
+
+        Assert.IsTrue(response?.IsSuccessStatusCode);
+
+        var tabulatorResponse = await response!.Content.ReadFromJsonAsync<TabulatorResponse<AddressEntity>>();
+
+        Assert.IsTrue(tabulatorResponse?.Data.Count == 99);
+
+        Assert.IsTrue(tabulatorResponse?.Data[0].Pc4.StartsWith('9'));
     }
 
 }
